@@ -413,9 +413,9 @@ NdnV2VTest::InstallProducer(void)
       
   //     producerId = randomNum->GetValue(0, m_nNodes-1);
   // }
-  //producerHelper.Install(m_nodes.Get(0)); // For test
-  //NS_LOG_INFO("Producer installed on node " << 0);
-  NS_LOG_INFO("No Producer installed");
+  producerHelper.Install(m_nodes.Get(0)); // For test
+  NS_LOG_INFO("Producer installed on node " << 0);
+  //NS_LOG_INFO("No Producer installed");
 
 }
 
@@ -445,7 +445,7 @@ int main (int argc, char *argv[])
 
 
    // Set number of  nodes and producer 
-  NdnV2VTest exp(2, 1);
+  NdnV2VTest exp(5, 1);
 
   exp.setNamePrefix("/V2V/test/");
    exp.setStrategy("random-wait");
