@@ -30,7 +30,7 @@
 namespace ns3{
 
 /**
- * This scenario simulates a scenario with 6 cars movind and communicating
+ * This scenario simulates a scenario with 5 cars movind and communicating
 ./ * in an ad-hoc way.
  *
  * 5 consumers request data from producer with frequency 1 interest per second
@@ -86,13 +86,11 @@ private:
 
     void InstallProducer(void);
 
-
     void CreateWaveNodes(void);
 
     void StartWave(void);
 
-    
-
+ 
 private:
 
     uint32_t m_nNodes;  // Number of nodes
@@ -112,7 +110,6 @@ private:
     string  m_strategy; // Name strategy
 
     //AnimationInterface m_anim;  // NetAni Interface
-
      
 };
 
