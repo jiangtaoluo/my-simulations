@@ -31,7 +31,7 @@ namespace ns3{
 
 /**
  * This scenario simulates a scenario with 6 cars movind and communicating
- * in an ad-hoc way.
+./ * in an ad-hoc way.
  *
  * 5 consumers request data from producer with frequency 1 interest per second
  * (interests contain constantly increasing sequence number).
@@ -44,7 +44,7 @@ namespace ns3{
  *     NS_LOG=ndn.Consumer:ndn.Producer ./waf --run=ndn-v2v-simple
  *
  * To modify the mobility model, see function installMobility.
- * To modify the wifi model, see function installWifi.
+ * To modify the wave model, see function cresteWveNodes.
  * To modify the NDN settings, see function installNDN and for consumer and
  * producer settings, see functions installConsumer and installProducer
  * respectively.
@@ -195,32 +195,6 @@ NdnV2VTest::CreateWaveNodes(void)
         j++;
     }
     
-    //mobility.SetPositionAllocator (positionAlloc);
-    
-    //mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-
-    // ObjectFactory pos;
-    // pos.SetTypeId("ns3::RandomBoxPositionAllocator");
-    // pos.Set("X", StringValue("ns3::UniformRandomVariable[Min=0.0|Max=800.0]"));
-    // pos.Set("Y", StringValue("ns3::UniformRandomVariable[Min=0.0|Max=8.0]"));
-    // // we need antenna height uniform [1.0 .. 2.0] for loss model
-    // pos.Set ("Z", StringValue ("ns3::UniformRandomVariable[Min=1.0|Max=2.0]"));
-
-    // Ptr<PositionAllocator> taPositionAlloc = pos.Create()->GetObject<PositionAllocator>();
-
-     // std::stringstream ssSpeed;
-     // ssSpeed << "ns3::UniformRandomVariable[Min=0.0|Max=" << m_nodeSpeed << "]";
-     // std::stringstream ssPause;
-     // ssPause << "ns3::ConstantRandomVariable[Constant=" << m_nodePause << "]";
-
-     // mobility.SetMobilityModel("ns3::RandomWaypointMobilityModel",
-     //                           "Speed", StringValue(ssSpeed.str()),
-     //                           "Pause", StringValue(ssPause.str()),
-     //                           // "PositionAllocator", PointerValue(taPositionAlloc));
-     //                            "PositionAllocator", PointerValue(positionAlloc));
-                               
-     // mobility.SetPositionAllocator(taPositionAlloc);
-
 
     // ConstantVelocity model
     
@@ -333,66 +307,27 @@ NdnV2VTest::InstallNDN(void)
 
 }
 
+// Install a Consumer on each node
 void
 NdnV2VTest::InstallConsumer(void)
 {
+    // Characteristics of Interests requests
   ndn::AppHelper cHelper("ns3::ndn::ConsumerCbr");
   cHelper.SetAttribute("Frequency", DoubleValue (1.0));
   cHelper.SetAttribute("MaxSeq", IntegerValue(1)); // For test: onlay send one interest
   cHelper.SetAttribute("Randomize", StringValue("uniform"));
+
+  cHelper.SetPrefix(m_namePrefix);
   
-  //string prefix = "/v2v/test/";
-  //string prefix = m_namePrefix;
+  for (int k=0; k<m_nNodes; k++) {
+      NS_LOG_INFO("Consumer installed on Node# " << k);
+      cHelper.Install(m_nodes.Get(k));
+  }
   
-  
-  // For start jitter
-  Ptr<UniformRandomVariable> rv = CreateObject<UniformRandomVariable>();
-  rv->SetAttribute("Min", DoubleValue(0.000));
-  rv->SetAttribute("Max", DoubleValue(0.500)); // 500 ms
-
-  string strNodeId;
-  // for (int k=0; k<m_nNodes; k++) {
-  //     if(std::find(m_vecProducer.begin(), m_vecProducer.end(), k) == m_vecProducer.end())
-  //     {
-  //         strNodeId = std::to_string(k);
-  //         string newPrefix = prefix;
-  //         newPrefix.append(strNodeId);
-
-  //         cHelper.SetPrefix(m_namePrefix);
-          
-  //         // No Producer installed
-  //         ApplicationContainer consumerContainer = cHelper.Install(m_nodes.Get(k)); // each consumer app per node
-
-  //         NS_LOG_INFO("Consumer installed on Node# " << k);
-
-  //         Time startTime = Seconds(rv->GetValue());
-  //         Ptr<Application> pConsumer = consumerContainer.Get(0);  // only one
-
-  //         pConsumer->SetStartTime(startTime);  // start randomly between 0-1 second.
-
-  //         NS_LOG_INFO("Schedule Consumer[" << k << "] start at " << startTime );
-
-  //         // for test
-  //         break;
-
-  //     }
-
-  //}
-
-  // // For test
-  int k = m_nNodes-1;
-  strNodeId = std::to_string(k);
-  string newPrefix = m_namePrefix;
-  newPrefix.append(strNodeId);
-
-  cHelper.SetPrefix(newPrefix);
-  ApplicationContainer app = cHelper.Install(m_nodes.Get(k));
-  app.Start(Seconds(1.0));
-  NS_LOG_INFO("Consumer installed on Node# " << k);
 
 }
 
-// Install a Producer at a random node
+// Install a Producer at the node with the largest id.
 void
 NdnV2VTest::InstallProducer(void)
 {
@@ -400,22 +335,8 @@ NdnV2VTest::InstallProducer(void)
   producerHelper.SetPrefix(m_namePrefix);
 
 
-
-  //  Ptr<UniformRandomVariable> randomNum = CreateObject<UniformRandomVariable> ();
-  // int producerId = randomNum->GetValue(0, m_nNodes-1);
-
-  // //Seclect randomly
-  // for (int i=0; i<m_nProducer; i++)
-  // {
-  //     producerHelper.Install(m_nodes.Get(producerId));
-  //     m_vecProducer.push_back(producerId);
-  //     NS_LOG_INFO("Producer installed on node " << producerId);
-      
-  //     producerId = randomNum->GetValue(0, m_nNodes-1);
-  // }
-  producerHelper.Install(m_nodes.Get(0)); // For test
-  NS_LOG_INFO("Producer installed on node " << 0);
-  //NS_LOG_INFO("No Producer installed");
+  producerHelper.Install(m_nodes.Get(m_nNodes-1)); // For test
+  NS_LOG_INFO("Producer installed on node " << (m_nNodes-1));
 
 }
 
@@ -440,16 +361,21 @@ int main (int argc, char *argv[])
 {
   NS_LOG_UNCOND ("V2VTest Simulator");
 
-  int simulationEnd = 10; // End time
+  int simulationEnd = 3; // End time
+  int nNodes = 5; // total numer of nodes
+  int nProducer = 1; // no. of producer
 
 
-
+  //string strategy = argv[1];
+  //cout << "Strategy = " << strategy << endl;
+  
    // Set number of  nodes and producer 
-  NdnV2VTest exp(5, 1);
+  NdnV2VTest exp(nNodes, nProducer);
 
   exp.setNamePrefix("/V2V/test/");
-   exp.setStrategy("random-wait");
-  //exp.setStrategy("multicast");
+  //exp.setStrategy("random-wait");
+  exp.setStrategy("multicast");
+  //exp.setStrategy(strategy);
 
   exp.Start();
 
@@ -457,15 +383,19 @@ int main (int argc, char *argv[])
   
   Simulator::Stop(Seconds(simulationEnd));
 
-  std::string animFile = "v2v-test.xml";
+  std::string animFile = "ndn-v2v-simple.xml";
+  //std::string animFile = strategy + ".xml";
   AnimationInterface anim(animFile);
 
-  ndn::AppDelayTracer::InstallAll("v2v-test.txt");
+  ndn::AppDelayTracer::InstallAll("v2v-simple.txt");
 
  
-  ndn::L3RateTracer::InstallAll("rate-trace.txt", Seconds(1.0));
+  //ndn::L3RateTracer::InstallAll("rate-trace.txt", Seconds(0.01));
   
   Simulator::Run ();
+
+  Simulator::Destroy();
+
   return 0;
 }
 } // namespace ns3
